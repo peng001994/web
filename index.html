@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投资周记追踪器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a1929;
+            --bg-secondary: #112240;
+            --bg-card: #1a365d;
+            --border-color: #2d4a7a;
+            --text-primary: #e6f7ff;
+            --text-secondary: #a8c7ff;
+            --accent-teal: #2dd4bf;
+            --accent-cyan: #22d3ee;
+            --accent-red: #f87171;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --glow-blue: rgba(59, 130, 246, 0.5);
+            --gradient-primary: linear-gradient(135deg, #0a1929, #112240);
+            --gradient-card: linear-gradient(145deg, #1a365d, #15325a);
+            --gradient-accent: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: var(--gradient-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(45, 74, 122, 0.5);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 3px;
+            background: var(--gradient-accent);
+            border-radius: 3px;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--gradient-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px var(--shadow-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-accent);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-title {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .stat-subvalue {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-profit {
+            color: var(--accent-teal);
+            text-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+        }
+
+        .stat-loss {
+            color: var(--accent-red);
+        }
+
+        .chart-container {
+            background: var(--gradient-card);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px var(--shadow-color);
+            height: 420px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-accent);
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            background: rgba(45, 74, 122, 0.5);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(45, 74, 122, 0.8);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+        }
+
+        .btn-success {
+            background: linear-gradient(90deg, var(--accent-teal), var(--accent-cyan));
+            color: white;
+            box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
+            box-shadow: 0 6px 20px rgba(45, 212, 191, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(90deg, #f87171, #ef4444);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 25, 41, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--gradient-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(26, 54, 93, 0.8);
+        }
+
+        .modal-header h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(17, 34, 64, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--glow-blue);
+        }
+
+        .modal-footer {
+            padding: 25px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            background: rgba(26, 54, 93, 0.8);
+        }
+
+        .records-container {
+            background: var(--gradient-card);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .records-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-accent);
+        }
+
+        .records-header {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .records-table th {
+            text-align: left;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .records-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(45, 74, 122, 0.5);
+        }
+
+        .records-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .records-table tr:hover {
+            background: rgba(45, 74, 122, 0.2);
+        }
+
+        .profit-cell {
+            color: var(--accent-teal);
+            font-weight: 800;
+            text-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+        }
+
+        .loss-cell {
+            color: var(--accent-red);
+            font-weight: 800;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: rgba(45, 74, 122, 0.5);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(45, 74, 122, 0.5);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .footer p:first-child {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .chart-container {
+                height: 350px;
+                padding: 20px;
+            }
+            
+            .records-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-value {
+                font-size: 1.7rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+                padding: 15px;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+            
+            .modal-footer {
+                flex-direction: column;
+            }
+            
+            .modal-footer .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .legend {
+            display: flex;
+            gap: 25px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+
+        .legend-color.principal {
+            background: linear-gradient(90deg, rgba(168, 199, 255, 0.7), rgba(168, 199, 255, 0.9));
+        }
+
+        .legend-color.balance {
+            background: linear-gradient(90deg, var(--accent-teal), var(--accent-cyan));
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+        }
+
+        .glow-effect {
+            position: relative;
+        }
+
+        .glow-effect::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: var(--gradient-accent);
+            border-radius: 14px;
+            z-index: -1;
+            filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .glow-effect:hover::before {
+            opacity: 0.7;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--border-color);
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        .week-badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .profit-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i> 投资周记追踪器</h1>
+            <p>记录每周投资本金与余额，追踪投资收益表现，以暗蓝风格呈现专业投资数据</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">
+                    <i class="fas fa-calendar-week"></i> 记录周数
+                </div>
+                <div class="stat-value" id="weeksCount">0 周</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">
+                    <i class="fas fa-money-bill-wave"></i> 总投入本金
+                </div>
+                <div class="stat-value" id="totalPrincipal">¥0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">
+                    <i class="fas fa-wallet"></i> 最新余额
+                </div>
+                <div class="stat-value" id="latestBalance">¥0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">
+                    <i class="fas fa-percentage"></i> 最新收益比例
+                </div>
+                <div class="stat-value" id="profitRatio">0.00%</div>
+                <div class="stat-subvalue" id="profitAmountContainer">
+                    <span id="profitAmount">¥0.00</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">
+                    <i class="fas fa-chart-bar"></i> 总盈利金额
+                </div>
+                <div class="stat-value" id="totalProfitAmount">¥0.00</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="fas fa-chart-area"></i> 投资趋势图
+            </div>
+            <canvas id="investmentChart"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color principal"></div>
+                    <span>投入本金</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color balance"></div>
+                    <span>每周余额</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary glow-effect" id="addRecordBtn">
+                <i class="fas fa-plus-circle"></i> 添加本周记录
+            </button>
+            <button class="btn btn-secondary" id="exportDataBtn">
+                <i class="fas fa-download"></i> 导出数据
+            </button>
+            <button class="btn btn-secondary" id="importDataBtn">
+                <i class="fas fa-upload"></i> 导入数据
+            </button>
+            <button class="btn btn-danger" id="clearDataBtn">
+                <i class="fas fa-trash-alt"></i> 清空所有数据
+            </button>
+        </div>
+
+        <div class="records-container">
+            <div class="records-header">
+                <i class="fas fa-history"></i> 历史记录
+            </div>
+            <div class="table-responsive">
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>周数</th>
+                            <th>存入本金 (¥)</th>
+                            <th>本周余额 (¥)</th>
+                            <th>收益比例</th>
+                            <th>累计盈利</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody">
+                        <!-- 记录将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>投资周记追踪器 &copy; 2023 | 数据仅保存在您的浏览器中，不会上传到服务器</p>
+            <p>注意：投资有风险，入市需谨慎</p>
+        </div>
+    </div>
+
+    <!-- 添加/编辑记录模态框 -->
+    <div class="modal" id="recordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">添加本周记录</h3>
+                <button class="action-btn" id="closeModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="principalInput"><i class="fas fa-money-bill-wave"></i> 本周存入本金 (¥)</label>
+                    <input type="number" id="principalInput" placeholder="输入本周存入的金额" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="balanceInput"><i class="fas fa-wallet"></i> 本周余额 (¥)</label>
+                    <input type="number" id="balanceInput" placeholder="输入本周的总余额" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBtn">取消</button>
+                <button class="btn btn-success" id="saveBtn">保存记录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入数据模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>导入数据</h3>
+                <button class="action-btn" id="closeImportModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>请粘贴之前导出的JSON数据：</p>
+                <textarea id="importDataText" rows="10" style="width: 100%; background: rgba(17, 34, 64, 0.7); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-family: monospace;"></textarea>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);"><i class="fas fa-exclamation-triangle"></i> 注意：导入数据将覆盖当前所有记录！</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelImportBtn">取消</button>
+                <button class="btn btn-primary" id="confirmImportBtn">导入数据</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据存储
+        let records = JSON.parse(localStorage.getItem('investmentRecords')) || [];
+        let editingIndex = -1; // 当前编辑的记录索引，-1表示添加新记录
+        
+        // DOM元素
+        const weeksCountEl = document.getElementById('weeksCount');
+        const totalPrincipalEl = document.getElementById('totalPrincipal');
+        const latestBalanceEl = document.getElementById('latestBalance');
+        const profitRatioEl = document.getElementById('profitRatio');
+        const profitAmountEl = document.getElementById('profitAmount');
+        const profitAmountContainer = document.getElementById('profitAmountContainer');
+        const totalProfitAmountEl = document.getElementById('totalProfitAmount');
+        const recordsBodyEl = document.getElementById('recordsBody');
+        const addRecordBtn = document.getElementById('addRecordBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const recordModal = document.getElementById('recordModal');
+        const importModal = document.getElementById('importModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeImportModalBtn = document.getElementById('closeImportModalBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelImportBtn = document.getElementById('cancelImportBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const confirmImportBtn = document.getElementById('confirmImportBtn');
+        const principalInput = document.getElementById('principalInput');
+        const balanceInput = document.getElementById('balanceInput');
+        const importDataText = document.getElementById('importDataText');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // 图表变量
+        let investmentChart;
+        
+        // 初始化函数
+        function init() {
+            updateStats();
+            renderRecords();
+            initChart();
+            
+            // 添加事件监听器
+            addRecordBtn.addEventListener('click', () => openModal());
+            closeModalBtn.addEventListener('click', () => closeModal());
+            cancelBtn.addEventListener('click', () => closeModal());
+            saveBtn.addEventListener('click', saveRecord);
+            
+            exportDataBtn.addEventListener('click', exportData);
+            importDataBtn.addEventListener('click', () => openImportModal());
+            closeImportModalBtn.addEventListener('click', () => closeImportModal());
+            cancelImportBtn.addEventListener('click', () => closeImportModal());
+            confirmImportBtn.addEventListener('click', importData);
+            
+            clearDataBtn.addEventListener('click', clearData);
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target === recordModal) closeModal();
+                if (e.target === importModal) closeImportModal();
+            });
+            
+            // 初始示例数据（如果没有任何记录）
+            if (records.length === 0) {
+                addExampleData();
+            }
+        }
+        
+        // 添加示例数据
+        function addExampleData() {
+            const exampleRecords = [
+                { principal: 1000, balance: 1025 },
+                { principal: 500, balance: 1570 },
+                { principal: 800, balance: 2420 },
+                { principal: 600, balance: 3080 },
+                { principal: 700, balance: 3830 },
+                { principal: 500, balance: 4380 },
+                { principal: 1000, balance: 5450 },
+                { principal: 800, balance: 6320 },
+                { principal: 600, balance: 6980 },
+                { principal: 700, balance: 7750 }
+            ];
+            
+            records = exampleRecords;
+            saveToLocalStorage();
+            updateStats();
+            renderRecords();
+            updateChart();
+        }
+        
+        // 打开添加/编辑记录模态框
+        function openModal(index = -1) {
+            editingIndex = index;
+            
+            if (index === -1) {
+                // 添加新记录
+                modalTitle.textContent = '添加本周记录';
+                principalInput.value = '';
+                balanceInput.value = '';
+            } else {
+                // 编辑现有记录
+                modalTitle.textContent = '编辑记录';
+                principalInput.value = records[index].principal;
+                balanceInput.value = records[index].balance;
+            }
+            
+            recordModal.style.display = 'flex';
+            principalInput.focus();
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            recordModal.style.display = 'none';
+        }
+        
+        // 打开导入数据模态框
+        function openImportModal() {
+            importModal.style.display = 'flex';
+            importDataText.focus();
+        }
+        
+        // 关闭导入数据模态框
+        function closeImportModal() {
+            importModal.style.display = 'none';
+            importDataText.value = '';
+        }
+        
+        // 保存记录
+        function saveRecord() {
+            const principal = parseFloat(principalInput.value);
+            const balance = parseFloat(balanceInput.value);
+            
+            if (isNaN(principal) || principal < 0 || isNaN(balance) || balance < 0) {
+                alert('请输入有效的正数金额');
+                return;
+            }
+            
+            if (editingIndex === -1) {
+                // 添加新记录
+                records.push({ principal, balance });
+            } else {
+                // 更新现有记录
+                records[editingIndex] = { principal, balance };
+            }
+            
+            saveToLocalStorage();
+            updateStats();
+            renderRecords();
+            updateChart();
+            closeModal();
+        }
+        
+        // 编辑记录
+        function editRecord(index) {
+            openModal(index);
+        }
+        
+        // 删除记录
+        function deleteRecord(index) {
+            if (confirm('确定要删除这条记录吗？')) {
+                records.splice(index, 1);
+                saveToLocalStorage();
+                updateStats();
+                renderRecords();
+                updateChart();
+            }
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            const weeksCount = records.length;
+            const totalPrincipal = records.reduce((sum, record) => sum + record.principal, 0);
+            const latestBalance = weeksCount > 0 ? records[weeksCount - 1].balance : 0;
+            const profitAmount = latestBalance - totalPrincipal; // 盈利金额 = 最新余额 - 总投入本金
+            const profitRatio = weeksCount > 0 ? ((profitAmount) / totalPrincipal * 100) : 0;
+            
+            weeksCountEl.textContent = `${weeksCount} 周`;
+            totalPrincipalEl.textContent = `¥${totalPrincipal.toFixed(2)}`;
+            latestBalanceEl.textContent = `¥${latestBalance.toFixed(2)}`;
+            
+            // 设置收益比例颜色和格式
+            profitRatioEl.textContent = `${profitRatio >= 0 ? '+' : ''}${profitRatio.toFixed(2)}%`;
+            profitRatioEl.className = 'stat-value ' + (profitRatio >= 0 ? 'stat-profit' : 'stat-loss');
+            
+            // 设置盈利金额颜色和格式
+            profitAmountEl.textContent = `${profitAmount >= 0 ? '+' : ''}¥${profitAmount.toFixed(2)}`;
+            
+            // 设置盈利金额容器样式
+            if (profitAmount >= 0) {
+                profitAmountContainer.className = 'stat-subvalue stat-profit';
+                profitAmountContainer.innerHTML = `<i class="fas fa-arrow-up"></i> <span id="profitAmount">${profitAmount >= 0 ? '+' : ''}¥${profitAmount.toFixed(2)}</span>`;
+            } else {
+                profitAmountContainer.className = 'stat-subvalue stat-loss';
+                profitAmountContainer.innerHTML = `<i class="fas fa-arrow-down"></i> <span id="profitAmount">${profitAmount >= 0 ? '+' : ''}¥${profitAmount.toFixed(2)}</span>`;
+            }
+            
+            // 设置总盈利金额
+            totalProfitAmountEl.textContent = `${profitAmount >= 0 ? '+' : ''}¥${profitAmount.toFixed(2)}`;
+            totalProfitAmountEl.className = 'stat-value ' + (profitAmount >= 0 ? 'stat-profit' : 'stat-loss');
+        }
+        
+        // 渲染记录表格
+        function renderRecords() {
+            recordsBodyEl.innerHTML = '';
+            
+            if (records.length === 0) {
+                recordsBodyEl.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 60px 20px;">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>暂无记录，点击"添加本周记录"按钮开始记录</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let cumulativePrincipal = 0;
+            
+            records.forEach((record, index) => {
+                cumulativePrincipal += record.principal;
+                const profit = record.balance - cumulativePrincipal;
+                const profitRatio = cumulativePrincipal > 0 ? (profit / cumulativePrincipal * 100) : 0;
+                const weekNumber = index + 1;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="week-badge">第 ${weekNumber} 周</span></td>
+                    <td>¥${record.principal.toFixed(2)}</td>
+                    <td><strong>¥${record.balance.toFixed(2)}</strong></td>
+                    <td class="${profitRatio >= 0 ? 'profit-cell' : 'loss-cell'}">
+                        ${profitRatio >= 0 ? '+' : ''}${profitRatio.toFixed(2)}%
+                    </td>
+                    <td class="${profit >= 0 ? 'profit-cell' : 'loss-cell'}">
+                        ${profit >= 0 ? '+' : ''}¥${profit.toFixed(2)}
+                    </td>
+                    <td class="actions-cell">
+                        <button class="action-btn" onclick="editRecord(${index})" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn" onclick="deleteRecord(${index})" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                recordsBodyEl.appendChild(row);
+            });
+        }
+        
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            
+            // 生成数据
+            const weeks = [];
+            const principalData = [];
+            const balanceData = [];
+            
+            let cumulativePrincipal = 0;
+            
+            records.forEach((record, index) => {
+                weeks.push(`第 ${index + 1} 周`);
+                cumulativePrincipal += record.principal;
+                principalData.push(cumulativePrincipal);
+                balanceData.push(record.balance);
+            });
+            
+            // 创建渐变效果
+            const principalGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            principalGradient.addColorStop(0, 'rgba(168, 199, 255, 0.3)');
+            principalGradient.addColorStop(1, 'rgba(168, 199, 255, 0.05)');
+            
+            const balanceGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            balanceGradient.addColorStop(0, 'rgba(45, 212, 191, 0.3)');
+            balanceGradient.addColorStop(1, 'rgba(45, 212, 191, 0.05)');
+            
+            // 创建图表
+            investmentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [
+                        {
+                            label: '投入本金',
+                            data: principalData,
+                            borderColor: 'rgba(168, 199, 255, 0.9)',
+                            backgroundColor: principalGradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(168, 199, 255, 1)',
+                            pointBorderColor: '#0a1929',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: '每周余额',
+                            data: balanceData,
+                            borderColor: 'rgba(45, 212, 191, 1)',
+                            backgroundColor: balanceGradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(45, 212, 191, 1)',
+                            pointBorderColor: '#0a1929',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: 'rgba(45, 212, 191, 1)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(26, 54, 93, 0.95)',
+                            titleColor: '#e6f7ff',
+                            bodyColor: '#a8c7ff',
+                            borderColor: '#2d4a7a',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += '¥' + context.parsed.y.toLocaleString();
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(45, 74, 122, 0.3)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#a8c7ff',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(45, 74, 122, 0.3)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#a8c7ff',
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8,
+                            hoverBorderWidth: 3
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新图表数据
+        function updateChart() {
+            const weeks = [];
+            const principalData = [];
+            const balanceData = [];
+            
+            let cumulativePrincipal = 0;
+            
+            records.forEach((record, index) => {
+                weeks.push(`第 ${index + 1} 周`);
+                cumulativePrincipal += record.principal;
+                principalData.push(cumulativePrincipal);
+                balanceData.push(record.balance);
+            });
+            
+            investmentChart.data.labels = weeks;
+            investmentChart.data.datasets[0].data = principalData;
+            investmentChart.data.datasets[1].data = balanceData;
+            investmentChart.update();
+        }
+        
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(records, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `投资周记数据_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        // 导入数据
+        function importData() {
+            try {
+                const importedData = JSON.parse(importDataText.value);
+                
+                if (!Array.isArray(importedData)) {
+                    throw new Error('数据格式不正确');
+                }
+                
+                // 验证每个记录是否包含必要的字段
+                for (const record of importedData) {
+                    if (typeof record.principal !== 'number' || typeof record.balance !== 'number') {
+                        throw new Error('数据格式不正确');
+                    }
+                }
+                
+                records = importedData;
+                saveToLocalStorage();
+                updateStats();
+                renderRecords();
+                updateChart();
+                closeImportModal();
+                
+                alert(`成功导入 ${records.length} 条记录`);
+            } catch (error) {
+                alert('导入失败：数据格式不正确');
+            }
+        }
+        
+        // 清空所有数据
+        function clearData() {
+            if (confirm('确定要清空所有数据吗？此操作不可撤销。')) {
+                records = [];
+                saveToLocalStorage();
+                updateStats();
+                renderRecords();
+                updateChart();
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveToLocalStorage() {
+            localStorage.setItem('investmentRecords', JSON.stringify(records));
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
